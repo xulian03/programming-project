@@ -55,6 +55,9 @@ class User(Serializable):
     def set_age(self, age):
         self._age = age
 
+    def set_name(self, name):
+        self._name = name
+
 
 class Coach(User):
     def __init__(self, id, name, age):
@@ -72,16 +75,44 @@ class Team(Serializable):
     def get_id(self):
         return self._id
 
+    def get_coach(self):
+        if isinstance(self.coach, str):
+            coach_repo = RepositoryProvider.get("Coach")
+            self.coach = coach_repo.find(self.coach)
+        return self.coach
+
+    def set_coach(self, coach):
+        self.coach = coach
+
     def get_players(self) -> list:
         if self.players and isinstance(self.players[0], str):
             players_repo = RepositoryProvider.get("Player")
             self.players = [players_repo.find(player) for player in self.players]
         return self.players
 
+    def add_player(self, player):
+        if player not in self.players:
+            self.players.append(player)
+
+    def remove_player(self, player):
+        if player in self.players:
+            self.players.remove(player)
+
+    def get_staff(self):
+        return self.staff
+
+    def add_staff(self, staff_member):
+        if staff_member not in self.staff:
+            self.staff.append(staff_member)
+
+    def remove_staff(self, staff_member):
+        if staff_member in self.staff:
+            self.staff.remove(staff_member)
+
     def serialize(self):
         data = super().serialize()
-        data["coach"] = self.coach.get_id() if self.coach else None
-        data["players"] = [player.get_id() for player in self.players]
+        data["coach"] = self.coach.get_id() if isinstance(self.coach, Coach) else None
+        data["players"] = [player.get_id() for player in self.players if isinstance(player, Player)]
         return data
     
     @classmethod
@@ -125,23 +156,115 @@ class Player(User):
             teams_repo = RepositoryProvider.get("Team")
             self._team = teams_repo.find(self._team)
         return self._team
+
+    def set_team(self, team):
+        self._team = team
+    
+    def get_squad_num(self):
+        return self._squad_num
+
+    def set_squad_num(self, squad_num):
+        self._squad_num = squad_num
     
     def get_position(self):
-        return Position[self._position]
+        return Position[self._position] if isinstance(self._position, str) else self._position
+
+    def set_position(self, position):
+        self._position = position
+
+    def get_goals(self):
+        return self._goals
+
+    def set_goals(self, goals):
+        self._goals = goals
+
+    def add_goal(self):
+        self._goals += 1
+
+    def get_assists(self):
+        return self._assists
+
+    def set_assists(self, assists):
+        self._assists = assists
+
+    def add_assist(self):
+        self._assists += 1
+
+    def get_shots(self):
+        return self._shots
+
+    def set_shots(self, shots):
+        self._shots = shots
+
+    def add_shot(self):
+        self._shots += 1
+
+    def get_shotsOnTarget(self):
+        return self._shotsOnTarget
+
+    def set_shotsOnTarget(self, shotsOnTarget):
+        self._shotsOnTarget = shotsOnTarget
+
+    def add_shotOnTarget(self):
+        self._shotsOnTarget += 1
+
+    def get_clearances(self):
+        return self._clearances
+
+    def set_clearances(self, clearances):
+        self._clearances = clearances
+
+    def add_clearance(self):
+        self._clearances += 1
 
     def serialize(self):
         data = super().serialize()
-        data["_team"] = self._team.get_id()
-        data["_position"] = self._position.name
+        data["_team"] = self._team.get_id() if isinstance(self._team, Team) else self._team
+        data["_position"] = self._position.name if isinstance(self._position, Position) else self._position
         return data
 
 
-class Match:
-    def __init__(self, date, rival, goals, assists, minutes):
+class Match(Serializable):
+    def __init__(self, id, date, rival, goals, assists, minutes):
+        self._id = id
         self.date = date 
         self.rival = rival 
         self.goals = goals 
         self.assists = assists 
+        self.minutes = minutes
+        self._serializable_attr = ["_id", "date", "rival", "goals", "assists", "minutes"]
+
+    def get_id(self):
+        return self._id
+
+    def get_date(self):
+        return self.date
+
+    def set_date(self, date):
+        self.date = date
+
+    def get_rival(self):
+        return self.rival
+
+    def set_rival(self, rival):
+        self.rival = rival
+
+    def get_goals(self):
+        return self.goals
+
+    def set_goals(self, goals):
+        self.goals = goals
+
+    def get_assists(self):
+        return self.assists
+
+    def set_assists(self, assists):
+        self.assists = assists
+
+    def get_minutes(self):
+        return self.minutes
+
+    def set_minutes(self, minutes):
         self.minutes = minutes
 
 
@@ -153,6 +276,9 @@ class ClubMember(User):
         self._serializable_attr += ["_team_coach", "_role"]
 
     def get_team_coach(self):
+        if isinstance(self._team_coach, str):
+            coach_repo = RepositoryProvider.get("Coach")
+            self._team_coach = coach_repo.find(self._team_coach)
         return self._team_coach
     
     def set_team_coach(self, team_coach):
@@ -176,6 +302,3 @@ class Referee(User):
     
     def set_licencia(self, licencia):
         self.__licencia = licencia
-
-
-
