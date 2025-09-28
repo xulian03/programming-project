@@ -1,10 +1,23 @@
 [
   {
+<<<<<<< HEAD
     "_id": "t1",
     "coach": "c1",
     "players": [
       "p1"
     ],
     "staff": []
+=======
+    "_id": "Real Madrid",
+    "coach": "2",
+    "players": [
+      "1"
+    ]
+  },
+  {
+    "_id": "t1",
+    "coach": "c1",
+    "players": []
+>>>>>>> 9f8e8c961f7989f721b95f9436d843e18c8d8b9b
   }
 ]

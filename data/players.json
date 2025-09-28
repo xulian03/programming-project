@@ -1,5 +1,21 @@
 [
   {
+<<<<<<< HEAD
+=======
+    "_id": "1",
+    "_name": "Juan",
+    "_age": 18,
+    "_team": "Real Madrid",
+    "_squad_num": 12,
+    "_position": "GK",
+    "_goals": 0,
+    "_assists": 0,
+    "_shots": 0,
+    "_shotsOnTarget": 0,
+    "_clearances": 0
+  },
+  {
+>>>>>>> 9f8e8c961f7989f721b95f9436d843e18c8d8b9b
     "_id": "p1",
     "_name": "Messi",
     "_age": 36,
