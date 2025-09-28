@@ -4,6 +4,10 @@ class Repository(ABC):
     @abstractmethod
     def find(self, id):
         pass
+    
+    @abstractmethod
+    def findAll(self):
+        pass
 
     @abstractmethod
     def save(self, element):
@@ -16,3 +20,14 @@ class Repository(ABC):
     @abstractmethod
     def replace(self, id, element):
         pass
+
+class RepositoryProvider():
+    _repositories = {}
+
+    @classmethod
+    def register(cls, name: str, repo):
+        cls._repositories[name] = repo
+
+    @classmethod
+    def get(cls, name) -> Repository:
+        return cls._repositories[name]
