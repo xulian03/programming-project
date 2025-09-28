@@ -30,9 +30,11 @@ class JSONRepository(Repository):
         return None
     
     def findAll(self):
-        return [self.cls.deserialize(element) for element in self._load]
+        return [self.cls.deserialize(element) for element in self._load()]
 
     def save(self, element):
+        if element == None:
+            return False
         data: list = self._load()
         id = element.get_id()
 
@@ -52,6 +54,6 @@ class JSONRepository(Repository):
         data = self._load()
         for i, d in enumerate(data):
             if d["_id"] == id:
-                data[i] = self.cls.serialize(element)
+                data[i] = element.serialize()
                 break
         self._save(data)
