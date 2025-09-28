@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "Real Madrid",
+    "coach": "2",
+    "players": [
+      "1"
+    ]
+  },
+  {
+    "_id": "t1",
+    "coach": "c1",
+    "players": []
+  }
+]
