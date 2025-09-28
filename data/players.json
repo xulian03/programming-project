@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "p1",
+    "_name": "Messi",
+    "_age": 36,
+    "_team": "t1",
+    "_squad_num": 10,
+    "_position": "DC",
+    "_goals": 0,
+    "_assists": 0,
+    "_shots": 0,
+    "_shotsOnTarget": 0,
+    "_clearances": 0
+  }
+]

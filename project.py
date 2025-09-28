@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from database.repository import RepositoryProvider
 
 
-# ---------------- Base Serializable ----------------
+
 class Serializable(ABC):
 
     @abstractmethod
@@ -22,7 +22,7 @@ class Serializable(ABC):
         return obj
 
 
-# ---------------- Enum Position ----------------
+
 class Position(Enum):
     GK = 1
     LD = 2
@@ -134,6 +134,7 @@ class Player(User):
         data["_team"] = self._team.get_id()
         data["_position"] = self._position.name
         return data
+
 
 
 class Match:
