@@ -8,4 +8,4 @@ def auth():
     print(utils.separator())
     utils.options("Jugador", "Entrenador", "Arbitro", "Salir")
 
-# Bienvenido emma
+# Hola 
