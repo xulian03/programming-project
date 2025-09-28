@@ -7,3 +7,5 @@ def auth():
     print(utils.default_text("A continuación, por favor seleccione su tipo de usuario"))
     print(utils.separator())
     utils.options("Jugador", "Entrenador", "Arbitro", "Salir")
+
+# Bienvenido emma
