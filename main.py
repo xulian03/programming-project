@@ -125,7 +125,7 @@ class RefereeMenu:
 # 📌 MENÚ PRINCIPAL
 # =============================
 class MainMenu:
-    def __init__(self):
+    def __init__(self): 
         self.auth = AuthSystem()
         self.player_menu = PlayerMenu()
         self.club_menu = ClubMemberMenu()

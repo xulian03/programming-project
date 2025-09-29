@@ -1,4 +1,4 @@
-from project import User, Coach
+from project import User
 from database.repository import RepositoryProvider
 
 class TeamService:
@@ -6,14 +6,17 @@ class TeamService:
     def __init__(self):
         pass
 
-    def create_team(team_id):
+    def create_team(self, team_id):
         pass
 
-    def update_player_profile(player_id, **updtes):
+    def get_team_info(self, team_id=None):
         pass
 
-    def get_all_players():
+    def add_player_to_team(self, team_id, player_id):
         pass
 
-    def search_players(filters):
+    def remove_player_to_team(self, team_id, player_id):
+        pass
+
+    def get_all_teams():
         pass

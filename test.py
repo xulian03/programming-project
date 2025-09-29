@@ -1,6 +1,6 @@
 from database.json_repository import JSONRepository
 from database.repository import RepositoryProvider
-from project import User, Player, Team, ClubMember, Position
+from project import User, Player, Referee, Team, ClubMember, Position
 
 
 
@@ -8,10 +8,13 @@ def main():
     players_repo = JSONRepository(Player)
     club_members_repo = JSONRepository(ClubMember)
     teams_repo = JSONRepository(Team)
+    referee_repo = JSONRepository(Referee)
 
     RepositoryProvider.register("Player", players_repo)
     RepositoryProvider.register("Team", teams_repo)
     RepositoryProvider.register("ClubMember", club_members_repo)
+    RepositoryProvider.register("Referee", referee_repo)
+
 
 
     coach = ClubMember("c1", "Pep Guardiola", 52)

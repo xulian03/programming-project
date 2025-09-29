@@ -1,9 +1,10 @@
 from project import User
+from .auth_service import AuthService
 from database.repository import RepositoryProvider
 
 class PlayerManagementService:
     def __init__(self):
-        self.current_user = None
+        pass
 
     def get_player_stats(player_id=None):
         pass
