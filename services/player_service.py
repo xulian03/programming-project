@@ -10,16 +10,16 @@ class PlayerManagementService:
 
     def get_player_stats(self, player_id=None):
         players_repo = self.auth_service.players_repo
-        player: Player = players_repo.find(player_id)
-        if player == None:
-            return None
+        player = players_repo.find(player_id) if player_id else self.auth_service.get_current_user()
+        if not isinstance(player, Player):
+            return False
         return player.serialize()
 
     def update_player_profile(self, player_id=None, **updates):
         players_repo = self.auth_service.players_repo
         teams_repo = self.auth_service.teams_repo
-        player: Player = players_repo.find(player_id) or self.auth_service.get_current_user()
-        if not player:
+        player = players_repo.find(player_id) if player_id else self.auth_service.get_current_user()
+        if not isinstance(player, Player):
             return False
         player.set_name(updates.get("name"))
         player.set_age(updates.get("age"))
@@ -30,14 +30,27 @@ class PlayerManagementService:
         player.set_shots_on_target(updates.get("shots_on_target"))
         player.set_team(teams_repo.find(updates.get("team")))
         player.set_position(updates.get("position"))
-        
+        players_repo.replace(player.get_id(), player)
         return True
 
     def get_all_players(self):
-        pass
+        players_repo = self.auth_service.players_repo
+        return [p.serialize() for p in players_repo.find_all()]
+        
 
     def search_players(self, filters):
-        pass
+        players_repo = self.auth_service.players_repo
+        players = players_repo.find_all()
+        results = []
+        for p in players:
+            match = True
+            for key, value in filters.items():
+                if getattr(p, key, None) != value:
+                    match = False
+                    break
+            if match:
+                results.append(p.serialize())
+        return results
 
     def get_instance():
         if PlayerManagementService._instance is None:

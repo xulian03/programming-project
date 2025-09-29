@@ -247,6 +247,8 @@ class Player(User):
         return Position[self._position] if isinstance(self._position, str) else self._position
 
     def set_position(self, position):
+        if not isinstance(position, Position) and not position in Position.__members__:
+            raise ValueError("Posición inválida")
         self._position = position if isinstance(position, Position) else Position(position)
 
     def get_goals(self):

@@ -82,6 +82,34 @@ class AuthService:
     def set_current_user(self, user):
         self._current_user = user
 
+    def update_user_profile(self, user_id, name=None, age=None):
+        user = None
+        print(age)
+        if not user_id:
+             user = self._current_user
+        else:
+            user = self.players_repo.find(user_id)
+            if user is None:
+                user = self.club_members_repo.find(user_id)
+            if user is None:
+                user = self.referee_repo.find(user_id)
+
+        if user is None:
+            return False
+
+        if name:
+            user.set_name(name)
+        if age:
+            user.set_age(age)
+
+        if isinstance(user, Player):
+            self.players_repo.replace(user.get_id(), user)
+        elif isinstance(user, ClubMember):
+            self.club_members_repo.replace(user.get_id(), user)
+        elif isinstance(user, Referee):
+            self.referee_repo.replace(user.get_id(), user)
+        return True
+
     def logout(self):
         if self._current_user:
             self.players_repo.save(self._current_user)
