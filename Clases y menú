@@ -2,6 +2,29 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from database.repository import RepositoryProvider
 import time
+from database.json_repository import JSONRepository
+from database.repository import RepositoryProvider
+from project import User, Player, Referee, Team, ClubMember, Position
+from services.auth_service import AuthService
+from services.player_service import PlayerManagementService
+from services.team_service import TeamService
+from services.report_service import ReportService
+
+def main():
+    players_repo = JSONRepository(Player)
+    club_members_repo = JSONRepository(ClubMember)
+    teams_repo = JSONRepository(Team)
+    referee_repo = JSONRepository(Referee)
+
+    RepositoryProvider.register("Player", players_repo)
+    RepositoryProvider.register("Team", teams_repo)
+    RepositoryProvider.register("ClubMember", club_members_repo)
+    RepositoryProvider.register("Referee", referee_repo)
+
+    auth_service: AuthService = AuthService.get_instance()
+    player_service: PlayerManagementService = PlayerManagementService.get_instance()
+    team_service: TeamService = TeamService.get_instance()
+
 
 
 
@@ -235,6 +258,39 @@ class Referee(User):
         self.license = license
 
 
+import time
+
+class User:
+    def __init__(self, id, name, age, password):
+        self.id = id
+        self.name = name
+        self.age = age
+        self.password = password
+
+    def check_password(self, password):
+        return self.password == password
+
+
+class Player(User):
+    def __init__(self, id, name, age, password, position, team):
+        super().__init__(id, name, age, password)
+        self.position = position
+        self.team = team
+
+
+class ClubMember(User):
+    def __init__(self, id, name, age, password, team, role):
+        super().__init__(id, name, age, password)
+        self.team = team
+        self.role = role
+
+
+class Referee(User):
+    def __init__(self, id, name, age, password, license):
+        super().__init__(id, name, age, password)
+        self.license = license
+
+
 class MainMenu:
     def __init__(self):
         self.users = []
@@ -377,7 +433,8 @@ class StaffMenu:
             print("1. Ver jugadores del equipo propio")
             print("2. Actualizar perfil")
             print("3. Buscar jugadores externos")
-            print("4. Cerrar sesión")
+            print("4. Crear equipo")
+            print("5. Cerrar sesión")
             option = input("Selecciona: ")
 
             if option == "1":
@@ -387,6 +444,8 @@ class StaffMenu:
             elif option == "3":
                 self.search_players()
             elif option == "4":
+                self.create_team()
+            elif option == "5":
                 print("Cerrando sesión...")
                 time.sleep(2)
                 break
@@ -403,6 +462,9 @@ class StaffMenu:
     def search_players(self):
         pass
 
+    def create_team(self):
+        pass
+
 
 class RefereeMenu:
     def __init__(self, referee):
@@ -411,14 +473,14 @@ class RefereeMenu:
     def show(self):
         while True:
             print("=== MENÚ ÁRBITRO ===")
-            print("1. Verificar partidos")
+            print("1.Buscar jugadores")
             print("2. Ver/Actualizar perfil")
             print("3. Exportar archivos de jugadores")
             print("4. Cerrar sesión")
             option = input("Selecciona: ")
 
             if option == "1":
-                self.verify_matches()
+                self.search_players()
             elif option == "2":
                 self.update_profile()
             elif option == "3":
@@ -431,7 +493,7 @@ class RefereeMenu:
                 print("Opción inválida")
                 time.sleep(2)
 
-    def verify_matches(self):
+    def search_player(self):
         pass
 
     def update_profile(self):
