@@ -82,9 +82,8 @@ class AuthService:
     def set_current_user(self, user):
         self._current_user = user
 
-    def update_user_profile(self, user_id, name=None, age=None):
+    def update_user_profile(self, name, age, user_id=None):
         user = None
-        print(age)
         if not user_id:
              user = self._current_user
         else:
