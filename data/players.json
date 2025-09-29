@@ -11,5 +11,18 @@
     "_shots": 0,
     "_shots_on_target": 0,
     "_clearances": 0
+  },
+  {
+    "_id": "45",
+    "_name": "Maldini",
+    "_age": 42,
+    "_password": "123456",
+    "_team": null,
+    "_position": "DFC",
+    "_goals": 0,
+    "_assists": 0,
+    "_shots": 0,
+    "_shots_on_target": 0,
+    "_clearances": 0
   }
 ]

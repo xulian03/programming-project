@@ -487,60 +487,146 @@ class Player(User):
                                    "_shots_on_target", "_clearances"]
         
     def get_team(self):
+        """
+        Retorna el objeto Team del jugador.
+        
+        Implementa lazy loading: si _team es un ID, lo convierte en objeto.
+        
+        Returns:
+        Team: Equipo al que pertenece el jugador
+        """
         if isinstance(self._team, str):
             teams_repo = RepositoryProvider.get("Team")
             self._team = teams_repo.find(self._team)
         return self._team
     
     def set_team(self, team):
+        """
+        Asigna un equipo al jugador.
+        
+        Args:
+        team (str|Team): ID del equipo u objeto Team
+        """
         self._team = team
     
     def get_position(self):
+        """
+        Retorna la posición del jugador como enum.
+        
+        Convierte string a enum si es necesario para mantener consistencia.
+        
+        Returns:
+        Position: Posición del jugador
+        """
         return Position[self._position] if isinstance(self._position, str) else self._position
 
     def set_position(self, position):
+        """
+        Actualiza la posición del jugador.
+        
+        Args:
+        position (Position|str): Nueva posición
+        """
         if not isinstance(position, Position) and not position in Position.__members__:
             raise ValueError("Posición inválida")
         self._position = position if isinstance(position, Position) else Position(position)
-
+    # Getters y setters para estadísticas
     def get_goals(self):
+        """Retorna el total de goles anotados."""
         return self._goals
 
     def set_goals(self, goals):
+        """
+        Actualiza el total de goles.
+        
+        Args:
+        goals (int): Nuevo total de goles
+        """
         self._goals = goals
 
     def get_assists(self):
+        """Retorna el total de asistencias."""
         return self._assists
 
     def set_assists(self, assists):
+        """
+        Actualiza el total de asistencias.
+        
+        Args:
+        assists (int): Nuevo total de asistencias
+        """
         self._assists = assists
 
     def get_shots(self):
+        """Retorna el total de disparos realizados."""
         return self._shots
 
     def set_shots(self, shots):
+        """
+        Actualiza el total de disparos.
+        
+        Args:
+        shots (int): Nuevo total de disparos
+        """
         self._shots = shots
 
     def get_shots_on_target(self):
+        """Retorna el total de disparos al arco."""
         return self._shots_on_target
 
     def set_shots_on_target(self, shots_on_target):
+        """
+        Actualiza el total de disparos al arco.
+        
+        Args:
+        shots_on_target (int): Nuevo total
+        """
         self._shots_on_target = shots_on_target
 
     def get_clearances(self):
+        """Retorna el total de despejes (métrica defensiva)."""
         return self._clearances
 
     def set_clearances(self, clearances):
+        """
+        Actualiza el total de despejes.
+        
+        Args:
+        clearances (int): Nuevo total de despejes
+        """
         self._clearances = clearances
 
     def serialize(self):
+        """
+        Serializa el jugador a diccionario.
+        
+        Convierte el enum Position a string y el objeto Team a ID para
+        permitir almacenamiento en JSON.
+        
+        Returns:
+        dict: Diccionario serializable del jugador
+        """
         data = super().serialize()
+        # Convierte enum a valor string
         data["_position"] = self._position.value if self._position else None
+        # Convierte objeto Team a ID
         data["_team"] = self._team.get_id() if isinstance(self._team, Team) else self._team
         return data
 
     @classmethod
     def deserialize(cls, data: dict):
+        """
+        Crea un objeto Player desde un diccionario.
+        
+        Convierte el string de posición de vuelta a enum Position.
+        
+        Args:
+        data (dict): Datos serializados del jugador
+            
+        Returns:
+        Player: Instancia de jugador con datos cargados
+        """
+        # Convierte string a enum antes de crear el objeto
         if "_position" in data and data["_position"]:
             data["_position"] = Position(data["_position"])
         return super().deserialize(data)
@@ -549,10 +635,48 @@ class Player(User):
 # Match
 # -------------------------------
 class Match(Serializable):
+    """
+    Representa un partido de fútbol.
+    
+    Esta clase está preparada para funcionalidades futuras donde se registren
+    y validen partidos, incluyendo estadísticas detalladas de cada jugador.
+    
+    Attributes:
+    _id (str): Identificador único del partido
+    _date (datetime): Fecha y hora del partido
+    _home_team (str): ID del equipo local
+    _away_team (str): ID del equipo visitante
+    _home_score (int): Goles del equipo local
+    _away_score (int): Goles del equipo visitante
+    _referee (str): ID del árbitro que dirige el partido
+    _status (str): Estado del partido ("scheduled", "finished", "validated")
+    _player_stats (dict): Estadísticas individuales de jugadores
+    _created_by (str): ID del usuario que creó el registro
+    _validated_by (str): ID del árbitro que validó el partido
+    _notes (str): Notas adicionales sobre el partido
+    """
     def __init__(self, id, date, home_team, away_team, home_score=0, away_score=0, 
                  referee=None, status="scheduled", player_stats=None, created_by=None, 
                  validated_by=None, notes=""):
+        """
+        Constructor de Match.
+        
+        Args:
+        id (str): Identificador único
+        date (datetime|str): Fecha del partido (ISO format si es string)
+        home_team (str): ID del equipo local
+        away_team (str): ID del equipo visitante
+        home_score (int, optional): Goles local. Por defecto 0
+        away_score (int, optional): Goles visitante. Por defecto 0
+        referee (str, optional): ID del árbitro
+        status (str, optional): Estado inicial. Por defecto "scheduled"
+        player_stats (dict, optional): Estadísticas por jugador
+        created_by (str, optional): ID del creador
+        validated_by (str, optional): ID del validador
+        notes (str, optional): Notas adicionales
+        """
         self._id = id
+        # Convierte string ISO a datetime si es necesario
         self._date = date if isinstance(date, datetime) else datetime.fromisoformat(date)
         self._home_team = home_team
         self._away_team = away_team
@@ -567,53 +691,102 @@ class Match(Serializable):
         self._serializable_attr = ["_id", "_date", "_home_team", "_away_team", "_home_score", 
                                   "_away_score", "_referee", "_status", "_player_stats", 
                                   "_created_by", "_validated_by", "_notes"]
-
+    # Getters básicos
     def get_id(self):
+        """Retorna el ID del partido."""
         return self._id
 
     def get_date(self):
+        """Retorna la fecha del partido."""
         return self._date
     
     def get_home_team(self):
+        """Retorna el ID del equipo local."""
         return self._home_team
 
     def get_away_team(self):
+        """Retorna el ID del equipo visitante."""
         return self._away_team
 
     def get_home_score(self):
+        """Retorna los goles del equipo local."""
         return self._home_score
 
     def get_away_score(self):
+        """Retorna los goles del equipo visitante."""
         return self._away_score
     
     def get_referee(self):
+        """Retorna el ID del árbitro."""
         return self._referee
 
     def get_status(self):
+        """Retorna el estado actual del partido."""
         return self._status
 
     def set_status(self, status):
+        """
+        Actualiza el estado del partido.
+        
+        Args:
+        status (str): Nuevo estado ("scheduled", "finished", "validated")
+        """
         self._status = status
 
     def get_player_stats(self):
+        """Retorna el diccionario de estadísticas por jugador."""
         return self._player_stats
 
     def set_player_stats(self, player_stats):
+        """
+        Actualiza las estadísticas de jugadores del partido.
+        
+        Args:
+        player_stats (dict): Diccionario {player_id: {stat: value}}
+        """
         self._player_stats = player_stats
 
     def get_notes(self):
+        """Retorna las notas del partido."""
         return self._notes
 
     def set_notes(self, notes):
+        """
+        Actualiza las notas del partido.
+        
+        Args:
+        notes (str): Nuevas notas
+        """
         self._notes = notes
 
     def serialize(self):
+        """
+        Serializa el partido a diccionario.
+        
+        Convierte datetime a string ISO format para permitir almacenamiento JSON.
+        
+        Returns:
+        dict: Diccionario serializable del partido
+        """
         data = super().serialize()
+        # Convierte datetime a ISO format string
         data["_date"] = self._date.isoformat() if isinstance(self._date, datetime) else self._date
         return data
 
     @classmethod
     def deserialize(cls, data: dict):
+        """
+        Crea un objeto Match desde un diccionario.
+        
+        Convierte el string ISO de fecha de vuelta a datetime.
+        
+        Args:
+        data (dict): Datos serializados del partido
+            
+        Returns:
+        Match: Instancia de partido con datos cargados
+        """
+        # Convierte ISO string a datetime
         if "_date" in data and isinstance(data["_date"], str):
             data["_date"] = datetime.fromisoformat(data["_date"])
         return super().deserialize(data)
