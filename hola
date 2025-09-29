@@ -1,0 +1,124 @@
+class AuthService:
+    def __init__(self):
+        self.players = {}
+        self.club_members = {}
+        self.referees = {}
+        self.logged_user = None
+
+    def register(self, user_type, user_id, name, age, password, team_id=None):
+        if len(password) < 6:
+            raise ValidationError("La contraseña debe tener al menos 6 caracteres.")
+        if not (10 <= age <= 60):
+            raise ValidationError("La edad debe estar entre 10 y 60 años.")
+
+        if user_type == "player":
+            if user_id in self.players:
+                raise ValidationError("Jugador ya registrado.")
+            self.players[user_id] = Player(user_id, name, age, password, team_id)
+        elif user_type == "club_member":
+            if user_id in self.club_members:
+                raise ValidationError("Miembro de club ya registrado.")
+            self.club_members[user_id] = ClubMember(user_id, name, age, password, team_id)
+        elif user_type == "referee":
+            if user_id in self.referees:
+                raise ValidationError("Árbitro ya registrado.")
+            self.referees[user_id] = Referee(user_id, name, age, password)
+        else:
+            raise ValidationError("Tipo de usuario inválido.")
+
+        return f"{user_type} registrado con éxito."
+
+    def login(self, user_id, password, user_type):
+        if user_type == "player":
+            user = self.players.get(user_id)
+        elif user_type == "club_member":
+            user = self.club_members.get(user_id)
+        else:
+            user = self.referees.get(user_id)
+
+        if not user:
+            raise AuthenticationError("Usuario no encontrado.")
+        if not user.check_password(password):
+            raise AuthenticationError("Contraseña incorrecta.")
+
+        self.logged_user = user
+        return user
+
+    def logout(self):
+        self.logged_user = None
+
+
+# ==============================
+# Servicios específicos
+# ==============================
+class PlayerService:
+    def view_stats(self, player: Player):
+        return player.stats
+
+    def view_team(self, player: Player):
+        return player.team_id if player.team_id else "Sin equipo asignado"
+
+    def view_history(self, player: Player):
+        return player.history if player.history else "No hay historial."
+
+    def update_profile(self, player: Player, name, age):
+        if not (10 <= age <= 60):
+            raise ValidationError("Edad inválida.")
+        player.set_name(name)
+        player.set_age(age)
+        return "Perfil actualizado."
+
+
+class MemberService:
+    def view_team_players(self, member: ClubMember, auth: AuthService):
+        jugadores = [p for p in auth.players.values() if p.team_id == member.team_id]
+        if not jugadores:
+            raise ValidationError("No hay jugadores en este equipo.")
+        return jugadores
+
+    def update_player_stats(self, member: ClubMember, auth: AuthService, player_id, goles, asistencias, partidos):
+        if player_id not in auth.players:
+            raise ValidationError("Jugador no encontrado.")
+        player = auth.players[player_id]
+        if player.team_id != member.team_id:
+            raise ValidationError("No puedes modificar jugadores de otro equipo.")
+        player.stats["goles"] += goles
+        player.stats["asistencias"] += asistencias
+        player.stats["partidos"] += partidos
+        return f"Estadísticas de {player.get_name()} actualizadas."
+
+    def create_match_report(self, member: ClubMember, rival, resultado, auth: AuthService):
+        jugadores = [p for p in auth.players.values() if p.team_id == member.team_id]
+        for p in jugadores:
+            p.add_match(rival, resultado)
+        return "Reporte de partido creado."
+
+    def view_profile(self, member: ClubMember):
+        return {
+            "ID": member.get_id(),
+            "Nombre": member.get_name(),
+            "Edad": member.get_age(),
+            "Rol": member.role,
+            "Equipo": member.team_id
+        }
+
+
+class RefereeService:
+    def assign_match(self, referee: Referee, partido):
+        referee.assigned_matches.append(partido)
+
+    def view_matches(self, referee: Referee):
+        return referee.assigned_matches if referee.assigned_matches else "No tienes partidos asignados."
+
+    def report_result(self, referee: Referee, partido, resultado):
+        for m in referee.assigned_matches:
+            if m["id"] == partido:
+                m["resultado"] = resultado
+                return "Resultado reportado."
+        raise ValidationError("Partido no encontrado.")
+
+    def view_profile(self, referee: Referee):
+        return {
+            "ID": referee.get_id(),
+            "Nombre": referee.get_name(),
+            "Edad": referee.get_age()
