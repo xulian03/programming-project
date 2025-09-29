@@ -1,41 +1,23 @@
 import time
 
-class User:
-    def __init__(self, id, name, age, password):
-        self.id = id
-        self.name = name
-        self.age = age
-        self.password = password
 
-    def check_password(self, password):
-        return self.password == password
-
-
-class Player(User):
-    def __init__(self, id, name, age, password, position, team):
-        super().__init__(id, name, age, password)
-        self.position = position
-        self.team = team
-
-
-class ClubMember(User):
-    def __init__(self, id, name, age, password, team, role):
-        super().__init__(id, name, age, password)
-        self.team = team
-        self.role = role
-
-
-class Referee(User):
-    def __init__(self, id, name, age, password, license):
-        super().__init__(id, name, age, password)
-        self.license = license
-
-
+# -------------------------------
+# Menú principal
+# -------------------------------
 class MainMenu:
+    """
+    Clase que gestiona el menú principal del sistema.
+    Permite registrar usuarios, iniciar sesión y salir.
+    """
+
     def __init__(self):
+        # Lista donde se almacenan todos los usuarios registrados
         self.users = []
 
     def show(self):
+        """
+        Muestra el menú principal en un bucle infinito hasta que el usuario decida salir.
+        """
         while True:
             print("=== MENÚ PRINCIPAL ===")
             print("1. Registrarse")
@@ -56,6 +38,13 @@ class MainMenu:
                 time.sleep(2)
 
     def register_user(self):
+        """
+        Permite registrar un nuevo usuario del tipo:
+        - Jugador
+        - Staff (Miembro del club)
+        - Árbitro
+        Incluye validaciones de edad y longitud de contraseña.
+        """
         print("=== REGISTRO ===")
         print("1. Jugador")
         print("2. Staff")
@@ -67,11 +56,13 @@ class MainMenu:
         age = int(input("Edad: "))
         password = input("Contraseña: ")
 
+        # Validación de longitud de contraseña
         if len(password) < 6:
             print("La contraseña debe tener mínimo 6 caracteres")
             time.sleep(2)
             return
 
+        # Registro de Jugador
         if user_type == "1":
             if age < 14 or age > 62:
                 print("Edad inválida para jugador")
@@ -84,6 +75,7 @@ class MainMenu:
             print("Jugador registrado con éxito")
             time.sleep(2)
 
+        # Registro de Staff
         elif user_type == "2":
             if age < 18:
                 print("Edad inválida para staff")
@@ -96,6 +88,7 @@ class MainMenu:
             print("Staff registrado con éxito")
             time.sleep(2)
 
+        # Registro de Árbitro
         elif user_type == "3":
             if age < 18 or age > 62:
                 print("Edad inválida para árbitro")
@@ -112,15 +105,21 @@ class MainMenu:
             time.sleep(2)
 
     def login(self):
+        """
+        Permite iniciar sesión validando ID y contraseña.
+        Dependiendo del tipo de usuario, abre el menú correspondiente.
+        """
         print("=== INICIO DE SESIÓN ===")
         id = input("ID: ")
         password = input("Contraseña: ")
 
+        # Busca un usuario que coincida con las credenciales
         user = next((u for u in self.users if u.id == id and u.check_password(password)), None)
 
         if user:
             print("Inicio de sesión exitoso")
             time.sleep(2)
+            # Redirigir al menú correspondiente
             if isinstance(user, Player):
                 PlayerMenu(user).show()
             elif isinstance(user, ClubMember):
@@ -132,11 +131,22 @@ class MainMenu:
             time.sleep(2)
 
 
+# -------------------------------
+# Menú de Jugador
+# -------------------------------
 class PlayerMenu:
+    """
+    Menú específico para jugadores.
+    Permite ver estadísticas, actualizar perfil y cerrar sesión.
+    """
+
     def __init__(self, player):
         self.player = player
 
     def show(self):
+        """
+        Muestra el menú del jugador en un bucle.
+        """
         while True:
             print("=== MENÚ JUGADOR ===")
             print("1. Ver estadísticas")
@@ -157,17 +167,30 @@ class PlayerMenu:
                 time.sleep(2)
 
     def view_stats(self):
+        """Muestra las estadísticas del jugador (por implementar)."""
         pass
 
     def update_profile(self):
+        """Permite actualizar nombre y edad del jugador (por implementar)."""
         pass
 
 
+# -------------------------------
+# Menú de Staff
+# -------------------------------
 class StaffMenu:
+    """
+    Menú específico para miembros del club.
+    Permite ver jugadores del equipo, buscar jugadores, crear equipo, etc.
+    """
+
     def __init__(self, staff):
         self.staff = staff
 
     def show(self):
+        """
+        Muestra el menú del staff en un bucle.
+        """
         while True:
             print("=== MENÚ STAFF ===")
             print("1. Ver jugadores del equipo propio")
@@ -194,23 +217,38 @@ class StaffMenu:
                 time.sleep(2)
 
     def view_team_players(self):
+        """Muestra la lista de jugadores del equipo del staff (por implementar)."""
         pass
 
     def update_profile(self):
+        """Permite actualizar datos del staff (por implementar)."""
         pass
 
     def search_players(self):
+        """Permite buscar jugadores externos (por implementar)."""
         pass
 
     def create_team(self):
+        """Permite crear un nuevo equipo (por implementar)."""
         pass
 
 
+# -------------------------------
+# Menú de Árbitro
+# -------------------------------
 class RefereeMenu:
+    """
+    Menú específico para árbitros.
+    Permite verificar partidos, actualizar perfil y exportar información de jugadores.
+    """
+
     def __init__(self, referee):
         self.referee = referee
 
     def show(self):
+        """
+        Muestra el menú del árbitro en un bucle.
+        """
         while True:
             print("=== MENÚ ÁRBITRO ===")
             print("1. Verificar partidos")
@@ -234,14 +272,20 @@ class RefereeMenu:
                 time.sleep(2)
 
     def verify_matches(self):
+        """Permite verificar partidos asignados (por implementar)."""
         pass
 
     def update_profile(self):
+        """Permite actualizar datos del árbitro (por implementar)."""
         pass
 
     def export_players(self):
+        """Permite exportar datos de jugadores (por implementar)."""
         pass
 
 
+# -------------------------------
+# Ejecución del programa
+# -------------------------------
 if __name__ == "__main__":
     MainMenu().show()
