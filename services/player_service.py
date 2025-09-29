@@ -56,7 +56,7 @@ class PlayerManagementService:
         if isinstance(current_user, Player):
             raise ValueError("No tienes permisos")
 
-        if isinstance(current_user, ClubMember) and current_user.get_role() == "coach":
+        if isinstance(current_user, ClubMember):
             if not current_user.get_team():
                 return []
             return [p.serialize() for p in players_repo.find_all() if p.get_team() == current_user.get_team()]

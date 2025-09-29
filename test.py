@@ -1,7 +1,10 @@
 from database.json_repository import JSONRepository
 from database.repository import RepositoryProvider
 from project import User, Player, Referee, Team, ClubMember, Position
-
+from services.auth_service import AuthService
+from services.player_service import PlayerManagementService
+from services.team_service import TeamService
+from services.report_service import ReportService
 
 
 def main():
@@ -15,20 +18,12 @@ def main():
     RepositoryProvider.register("ClubMember", club_members_repo)
     RepositoryProvider.register("Referee", referee_repo)
 
+    auth_service: AuthService = AuthService.get_instance()
+    player_service: PlayerManagementService = PlayerManagementService.get_instance()
+    team_service: TeamService = TeamService.get_instance()
+    
+    
 
-
-    coach = ClubMember("c1", "Pep Guardiola", 52)
-    team = Team("Barcelona", coach)
-    player = Player("p1", "Messi", 36, 10, team, Position.DC)
-    team.get_players().append(player)
-    teams_repo.save(team)
-    players_repo.save(player)
-    club_members_repo.save(coach)
-
-    for player in team.get_players():
-        print(player.get_name())
-    print(team.get_players())  # debería traer objetos Player
-    print(player.get_team().get_name())  # debería traer "t1"
 
 
 if __name__ == "__main__":
