@@ -1,164 +1,298 @@
-import utils
-import authenticator
+class ScoutingError(Exception):
+    pass
 
+class ValidationError(ScoutingError):
+    pass
 
-print(utils.separator())
-print(utils.title_style("BIENVENIDO/A A %NOMBRE-APP%"))
-print(utils.separator())
-print()
-authenticator.auth()
+class AuthenticationError(ScoutingError):
+    pass
 
-# =============================
-# 📌 AUTENTICACIÓN
-# =============================
-class AuthSystem:
+class AuthService:
     def __init__(self):
-        self.users = {}
-        self.current_user = None
+        self.players = {}
+        self.club_members = {}
+        self.referees = {}
+        self.logged_user = None
 
-    def register(self, user_type):
-        user_id = input("ID: ")
-        password = input("Password: ")
-        name = input("Name: ")
-        age = int(input("Age: "))
+    def register(self, user_type, user_id, name, age, password, team_id=None):
+        if len(password) < 6:
+            raise ValidationError("La contraseña debe tener al menos 6 caracteres.")
+        if not (10 <= age <= 60):
+            raise ValidationError("La edad debe estar entre 10 y 60 años.")
 
         if user_type == "player":
-            team_id = input("Team ID: ")
-            squad_num = input("Squad Number: ")
-            position = input("Position: ")
-            user = Player(user_id, password, name, age, team_id, squad_num, position)
-
-        elif user_type == "clubmember":
-            role = input("Role: ")
-            team_coach = input("Team Coach: ")
-            user = ClubMember(user_id, password, name, age, role, team_coach)
-
+            if user_id in self.players:
+                raise ValidationError("Jugador ya registrado.")
+            self.players[user_id] = Player(user_id, name, age, password, team_id)
+        elif user_type == "club_member":
+            if user_id in self.club_members:
+                raise ValidationError("Miembro de club ya registrado.")
+            self.club_members[user_id] = ClubMember(user_id, name, age, password, team_id)
         elif user_type == "referee":
-            licencia = input("Licencia: ")
-            user = Referee(user_id, password, name, age, licencia)
-
+            if user_id in self.referees:
+                raise ValidationError("Árbitro ya registrado.")
+            self.referees[user_id] = Referee(user_id, name, age, password)
         else:
-            print("Tipo de usuario inválido.")
-            return
+            raise ValidationError("Tipo de usuario inválido.")
 
-        self.users[user_id] = user
-        print(f"✅ {user_type.capitalize()} registrado con éxito!")
+        return f"{user_type} registrado con éxito."
 
-    def login(self):
+    def login(self, user_id, password, user_type):
+        if user_type == "player":
+            user = self.players.get(user_id)
+        elif user_type == "club_member":
+            user = self.club_members.get(user_id)
+        else:
+            user = self.referees.get(user_id)
+
+        if not user:
+            raise AuthenticationError("Usuario no encontrado.")
+        if not user.check_password(password):
+            raise AuthenticationError("Contraseña incorrecta.")
+
+        self.logged_user = user
+        return user
+
+    def logout(self):
+        self.logged_user = None
+
+
+# ==============================
+# Servicios específicos
+# ==============================
+class PlayerService:
+    def view_stats(self, player: Player):
+        return player.stats
+
+    def view_team(self, player: Player):
+        return player.team_id if player.team_id else "Sin equipo asignado"
+
+    def view_history(self, player: Player):
+        return player.history if player.history else "No hay historial."
+
+    def update_profile(self, player: Player, name, age):
+        if not (10 <= age <= 60):
+            raise ValidationError("Edad inválida.")
+        player.set_name(name)
+        player.set_age(age)
+        return "Perfil actualizado."
+
+
+class MemberService:
+    def view_team_players(self, member: ClubMember, auth: AuthService):
+        jugadores = [p for p in auth.players.values() if p.team_id == member.team_id]
+        if not jugadores:
+            raise ValidationError("No hay jugadores en este equipo.")
+        return jugadores
+
+    def update_player_stats(self, member: ClubMember, auth: AuthService, player_id, goles, asistencias, partidos):
+        if player_id not in auth.players:
+            raise ValidationError("Jugador no encontrado.")
+        player = auth.players[player_id]
+        if player.team_id != member.team_id:
+            raise ValidationError("No puedes modificar jugadores de otro equipo.")
+        player.stats["goles"] += goles
+        player.stats["asistencias"] += asistencias
+        player.stats["partidos"] += partidos
+        return f"Estadísticas de {player.get_name()} actualizadas."
+
+    def create_match_report(self, member: ClubMember, rival, resultado, auth: AuthService):
+        jugadores = [p for p in auth.players.values() if p.team_id == member.team_id]
+        for p in jugadores:
+            p.add_match(rival, resultado)
+        return "Reporte de partido creado."
+
+    def view_profile(self, member: ClubMember):
+        return {
+            "ID": member.get_id(),
+            "Nombre": member.get_name(),
+            "Edad": member.get_age(),
+            "Rol": member.role,
+            "Equipo": member.team_id
+        }
+
+
+class RefereeService:
+    def assign_match(self, referee: Referee, partido):
+        referee.assigned_matches.append(partido)
+
+    def view_matches(self, referee: Referee):
+        return referee.assigned_matches if referee.assigned_matches else "No tienes partidos asignados."
+
+    def report_result(self, referee: Referee, partido, resultado):
+        for m in referee.assigned_matches:
+            if m["id"] == partido:
+                m["resultado"] = resultado
+                return "Resultado reportado."
+        raise ValidationError("Partido no encontrado.")
+
+    def view_profile(self, referee: Referee):
+        return {
+            "ID": referee.get_id(),
+            "Nombre": referee.get_name(),
+            "Edad": referee.get_age()
+        }
+
+class MenuSystem:
+    def __init__(self):
+        self.auth_service = AuthService()
+        self.player_service = PlayerService()
+        self.club_service = MemberService()
+        self.referee_service = RefereeService()
+
+    def main_menu(self):
+        while True:
+            print("\n=== MENÚ PRINCIPAL ===")
+            print("1. Registrarse")
+            print("2. Iniciar sesión")
+            print("3. Salir")
+            opcion = input("Selecciona: ")
+
+            try:
+                if opcion == "1":
+                    self.register_menu()
+                elif opcion == "2":
+                    self.login_menu()
+                elif opcion == "3":
+                    print("Hasta luego 👋")
+                    break
+                else:
+                    print("Opción inválida.")
+            except ScoutingError as e:
+                print(f"Error: {e}")
+
+    def register_menu(self):
+        print("\n=== REGISTRO ===")
+        tipo = input("Tipo (player / club_member / referee): ")
         user_id = input("ID: ")
-        password = input("Password: ")
+        name = input("Nombre: ")
+        age = int(input("Edad: "))
+        password = input("Contraseña: ")
+        team_id = None
+        if tipo in ["player", "club_member"]:
+            team_id = input("ID del equipo: ")
+        msg = self.auth_service.register(tipo, user_id, name, age, password, team_id)
+        print(msg)
 
-        user = self.users.get(user_id)
-        if user and user.password == password:
-            self.current_user = user
-            print(f"✅ Bienvenido {user.name} ({type(user).__name__})")
-        else:
-            print("❌ Credenciales inválidas.")
+    def login_menu(self):
+        print("\n=== LOGIN ===")
+        tipo = input("Tipo (player / club_member / referee): ")
+        user_id = input("ID: ")
+        password = input("Contraseña: ")
+        user = self.auth_service.login(user_id, password, tipo)
+        print(f"Bienvenido {user.get_name()}!")
 
+        if tipo == "player":
+            self.player_menu(user)
+        elif tipo == "club_member":
+            self.club_menu(user)
+        elif tipo == "referee":
+            self.referee_menu(user)
 
-# =============================
-# 📌 MENÚS SEGÚN USUARIO
-# =============================
-class PlayerMenu:
-    def show(self, user):
+    # ------------------------------
+    # Menú Player
+    # ------------------------------
+    def player_menu(self, player: Player):
         while True:
-            print("\n--- MENÚ JUGADOR ---")
-            print("1. Ver mis estadísticas")
+            print("\n=== MENÚ JUGADOR ===")
+            print("1. Ver estadísticas")
             print("2. Ver mi equipo")
-            print("3. Ver mi historial de partidos")
-            print("4. Actualizar mi perfil")
+            print("3. Ver historial de partidos")
+            print("4. Actualizar perfil")
             print("5. Cerrar sesión")
+            opcion = input("Selecciona: ")
 
-            opcion = input("Seleccione una opción: ")
-            match opcion:
-                case "1": print("📊 Mostrando estadísticas...")
-                case "2": print("⚽ Mostrando equipo...")
-                case "3": print("📜 Mostrando historial...")
-                case "4": print("✏️ Actualizando perfil...")
-                case "5": break
-                case _: print("Opción inválida.")
+            try:
+                if opcion == "1":
+                    print(self.player_service.view_stats(player))
+                elif opcion == "2":
+                    print("Equipo:", self.player_service.view_team(player))
+                elif opcion == "3":
+                    print(self.player_service.view_history(player))
+                elif opcion == "4":
+                    name = input("Nuevo nombre: ")
+                    age = int(input("Nueva edad: "))
+                    print(self.player_service.update_profile(player, name, age))
+                elif opcion == "5":
+                    self.auth_service.logout()
+                    break
+                else:
+                    print("Opción inválida.")
+            except ScoutingError as e:
+                print("Error:", e)
 
-
-class ClubMemberMenu:
-    def show(self, user):
+    # ------------------------------
+    # Menú ClubMember
+    # ------------------------------
+    def club_menu(self, member: ClubMember):
         while True:
-            print("\n--- MENÚ CLUB MEMBER ---")
+            print("\n=== MENÚ CLUB MEMBER ===")
             print("1. Ver jugadores de mi equipo")
             print("2. Actualizar estadísticas de jugador")
             print("3. Crear reporte de partido")
-            print("4. Gestionar planilla del equipo")
-            print("5. Ver mi perfil")
-            print("6. Cerrar sesión")
-
-            opcion = input("Seleccione una opción: ")
-            match opcion:
-                case "1": print("👥 Jugadores del equipo...")
-                case "2": print("📊 Actualizando estadísticas...")
-                case "3": print("📝 Creando reporte...")
-                case "4": print("📋 Gestionando planilla...")
-                case "5": print("🙍 Ver perfil...")
-                case "6": break
-                case _: print("Opción inválida.")
-
-
-class RefereeMenu:
-    def show(self, user):
-        while True:
-            print("\n--- MENÚ ÁRBITRO ---")
-            print("1. Validar estadísticas de partido")
-            print("2. Crear registro oficial de partido")
-            print("3. Ver partidos asignados")
             print("4. Ver mi perfil")
             print("5. Cerrar sesión")
+            opcion = input("Selecciona: ")
 
-            opcion = input("Seleccione una opción: ")
-            match opcion:
-                case "1": print("✅ Validando estadísticas...")
-                case "2": print("📝 Creando registro oficial...")
-                case "3": print("📅 Mostrando partidos asignados...")
-                case "4": print("🙍 Ver perfil árbitro...")
-                case "5": break
-                case _: print("Opción inválida.")
-
-
-# =============================
-# 📌 MENÚ PRINCIPAL
-# =============================
-class MainMenu:
-    def __init__(self): 
-        self.auth = AuthSystem()
-        self.player_menu = PlayerMenu()
-        self.club_menu = ClubMemberMenu()
-        self.referee_menu = RefereeMenu()
-
-    def show(self):
-        while True:
-            print("\n=== MENÚ PRINCIPAL ===")
-            print("1. Seleccionar tipo de usuario y registrarse")
-            print("2. Iniciar sesión")
-            print("3. Menú según usuario logueado")
-            print("4. Salir")
-
-            opcion = input("Seleccione una opción: ")
-            match opcion:
-                case "1":
-                    print("1. Player\n2. Club Member\n3. Referee")
-                    tipo = input("Seleccione tipo de usuario: ")
-                    tipos = {"1": "player", "2": "clubmember", "3": "referee"}
-                    self.auth.register(tipos.get(tipo, ""))
-                case "2":
-                    self.auth.login()
-                case "3":
-                    if not self.auth.current_user:
-                        print("❌ Debes iniciar sesión primero.")
-                        continue
-                    user = self.auth.current_user
-                    if isinstance(user, Player): self.player_menu.show(user)
-                    elif isinstance(user, ClubMember): self.club_menu.show(user)
-                    elif isinstance(user, Referee): self.referee_menu.show(user)
-                case "4":
-                    print("👋 Saliendo del programa...")
+            try:
+                if opcion == "1":
+                    jugadores = self.club_service.view_team_players(member, self.auth_service)
+                    for j in jugadores:
+                        print(f"- {j.get_name()} | {j.stats}")
+                elif opcion == "2":
+                    player_id = input("ID del jugador: ")
+                    goles = int(input("Goles a sumar: "))
+                    asistencias = int(input("Asistencias a sumar: "))
+                    partidos = int(input("Partidos a sumar: "))
+                    print(self.club_service.update_player_stats(member, self.auth_service, player_id, goles, asistencias, partidos))
+                elif opcion == "3":
+                    rival = input("Rival: ")
+                    resultado = input("Resultado (ej: 2-1): ")
+                    print(self.club_service.create_match_report(member, rival, resultado, self.auth_service))
+                elif opcion == "4":
+                    perfil = self.club_service.view_profile(member)
+                    print(perfil)
+                elif opcion == "5":
+                    self.auth_service.logout()
                     break
-                case _:
+                else:
                     print("Opción inválida.")
-    
+            except ScoutingError as e:
+                print("Error:", e)
+
+    # ------------------------------
+    # Menú Referee
+    # ------------------------------
+    def referee_menu(self, referee: Referee):
+        while True:
+            print("\n=== MENÚ ÁRBITRO ===")
+            print("1. Ver partidos asignados")
+            print("2. Reportar resultado de partido")
+            print("3. Ver mi perfil")
+            print("4. Cerrar sesión")
+            opcion = input("Selecciona: ")
+
+            try:
+                if opcion == "1":
+                    print(self.referee_service.view_matches(referee))
+                elif opcion == "2":
+                    partido_id = input("ID del partido: ")
+                    resultado = input("Resultado: ")
+                    print(self.referee_service.report_result(referee, partido_id, resultado))
+                elif opcion == "3":
+                    perfil = self.referee_service.view_profile(referee)
+                    print(perfil)
+                elif opcion == "4":
+                    self.auth_service.logout()
+                    break
+                else:
+                    print("Opción inválida.")
+            except ScoutingError as e:
+                print("Error:", e)
+
+
+# ==============================
+# Ejecutar programa
+# ==============================
+if __name__ == "__main__":
+    MenuSystem().main_menu()
