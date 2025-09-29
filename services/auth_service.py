@@ -110,9 +110,17 @@ class AuthService:
         return True
 
     def logout(self):
-        if self._current_user:
-            self.players_repo.save(self._current_user)
+        user = self._current_user
+        if user:
+            if isinstance(user, Player):
+                self.players_repo.replace(user.get_id(), user)
+            elif isinstance(user, ClubMember):
+                self.club_members_repo.replace(user.get_id(), user)
+            elif isinstance(user, Referee):
+                self.referee_repo.replace(user.get_id(), user)
             self._current_user = None
+            return True
+        return False
 
     def get_instance():
         if AuthService._instance is None:

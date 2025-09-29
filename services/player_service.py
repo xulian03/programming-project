@@ -38,13 +38,14 @@ class PlayerManagementService:
 
         player.set_name(updates.get("name"))
         player.set_age(updates.get("age"))
-        player.set_goals(updates.get("goals"))
-        player.set_assists(updates.get("assists"))
-        player.set_clearances(updates.get("clearances"))
-        player.set_shots(updates.get("shots"))
-        player.set_shots_on_target(updates.get("shots_on_target"))
+        player.set_goals(updates.get("goals", 0))
+        player.set_assists(updates.get("assists", 0))
+        player.set_clearances(updates.get("clearances", 0))
+        player.set_shots(updates.get("shots", 0))
+        player.set_shots_on_target(updates.get("shots_on_target", 0))
         player.set_team(teams_repo.find(updates.get("team")))
-        player.set_position(updates.get("position"))
+        if updates.get("position"):
+            player.set_position(updates.get("position"))
 
         players_repo.replace(player.get_id(), player)
         return True
@@ -52,19 +53,17 @@ class PlayerManagementService:
     def get_all_players(self, team_id=None):
         players_repo = self.auth_service.players_repo
         current_user = self.auth_service.get_current_user()
-
         if isinstance(current_user, Player):
             raise ValueError("No tienes permisos")
-
         if isinstance(current_user, ClubMember):
             if not current_user.get_team():
                 return []
-            return [p.serialize() for p in players_repo.find_all() if p.get_team() == current_user.get_team()]
-
+            return [p.serialize() for p in players_repo.findAll() if 
+                    (p.get_team().get_id() if p.get_team() else p.get_team()) == current_user.get_team().get_id()]
         if isinstance(current_user, Referee):
             if team_id:
-                return [p.serialize() for p in players_repo.find_all() if p.get_team() and p.get_team().get_id() == team_id]
-            return [p.serialize() for p in players_repo.find_all()]
+                return [p.serialize() for p in players_repo.findAll() if p.get_team() and p.get_team().get_id() == team_id]
+            return [p.serialize() for p in players_repo.findAll()]
 
         raise ValueError("No tienes permisos")
 
@@ -77,7 +76,7 @@ class PlayerManagementService:
             raise ValueError("No tienes permisos")
 
         if isinstance(current_user, (ClubMember, Referee)):
-            players = players_repo.find_all()
+            players = players_repo.findAll()
             results = []
             for p in players:
                 match = True

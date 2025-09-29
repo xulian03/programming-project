@@ -10,10 +10,10 @@ from utils import title_style, default_text, separator, options, WIDTH
 
 class MenuSystem:
     def __init__(self):
-        self.auth_service = AuthService.get_instance()
-        self.player_service = PlayerManagementService.get_instance()
-        self.team_service = TeamService.get_instance()
-        self.report_service = ReportService.get_instance()
+        self.auth_service: AuthService = AuthService.get_instance()
+        self.player_service: PlayerManagementService = PlayerManagementService.get_instance()
+        self.team_service: TeamService = TeamService.get_instance()
+        self.report_service: ReportService = ReportService.get_instance()
 
     def main_menu(self):
         while True:
@@ -36,6 +36,8 @@ class MenuSystem:
             except Exception as e:
                 print(default_text(f"Error: {e}"))
             except KeyboardInterrupt:
+                if self.auth_service.logout():
+                    print("\n" + default_text("Sesión cerrada"))
                 print("\n" + default_text("Operación cancelada"))
                 break
 
@@ -217,21 +219,20 @@ class MenuSystem:
                 print(default_text(f"Error: {e}"))
                 input(default_text("Presiona Enter para continuar..."))
 
-    def view_player_stats(self, player: Player):
+    def view_player_stats(self, player: Player=None):
         try:
-            stats = self.player_service.get_player_stats()
+            stats = self.player_service.get_player_stats(player)
             print("\n" + separator())
             print(title_style("MIS ESTADÍSTICAS"))
             print(separator())
-            print(default_text(f"Nombre: {stats.get('name', 'N/A')}"))
-            print(default_text(f"Edad: {stats.get('age', 'N/A')}"))
-            print(default_text(f"Posición: {stats.get('position', 'N/A')}"))
-            print(default_text(f"Goles: {stats.get('goals', 0)}"))
-            print(default_text(f"Asistencias: {stats.get('assists', 0)}"))
-            print(default_text(f"Tiros: {stats.get('shots', 0)}"))
-            print(default_text(f"Tiros a puerta: {stats.get('shots_on_target', 0)}"))
-            print(default_text(f"Despejes: {stats.get('clearances', 0)}"))
-            print(default_text(f"Partidos jugados: {stats.get('matches_played', 0)}"))
+            print(default_text(f"Nombre: {stats.get('_name', 'N/A')}"))
+            print(default_text(f"Edad: {stats.get('_age', 'N/A')}"))
+            print(default_text(f"Posición: {stats.get('_position', 'N/A')}"))
+            print(default_text(f"Goles: {stats.get('_goals', 0)}"))
+            print(default_text(f"Asistencias: {stats.get('_assists', 0)}"))
+            print(default_text(f"Tiros: {stats.get('_shots', 0)}"))
+            print(default_text(f"Tiros a puerta: {stats.get('_shots_on_target', 0)}"))
+            print(default_text(f"Despejes: {stats.get('_clearances', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error al obtener estadísticas: {e}"))
@@ -245,23 +246,17 @@ class MenuSystem:
                 input(default_text("Presiona Enter para continuar..."))
                 return
             
-            team_info = self.team_service.get_team_info(team.get_id() if hasattr(team, 'get_id') else team['id'])
-            if not team_info:
-                print(default_text("No se pudo obtener información del equipo"))
-                input(default_text("Presiona Enter para continuar..."))
-                return
-            
             print("\n" + separator())
             print(title_style("MI EQUIPO"))
             print(separator())
-            print(default_text(f"Nombre: {team_info.get('name', 'N/A')}"))
+            print(default_text(f"Nombre: {team.get_name()}"))
             
             # Obtener jugadores del equipo
-            all_players = self.player_service.get_all_players(team_info.get('id'))
+            all_players = self.player_service.get_all_players(team.get_id())
             print("\n" + default_text("Compañeros de equipo:"))
             for teammate in all_players:
-                if teammate.get('id') != player.get_id():
-                    print(default_text(f"- {teammate.get('name')} ({teammate.get('position')})"))
+                if teammate.get('_id') != player.get_id():
+                    print(default_text(f"- {teammate.get('_name')} ({teammate.get('_position')})"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error al obtener información del equipo: {e}"))
@@ -285,6 +280,7 @@ class MenuSystem:
                 print(default_text("Error: Edad debe ser un número"))
                 input(default_text("Presiona Enter para continuar..."))
                 return
+        
         
         if updates:
             try:
@@ -312,12 +308,16 @@ class MenuSystem:
                     "Ver jugadores de mi equipo",
                     "Ver estadísticas de jugador específico"
                 ]
-                
+                menu_options = []
                 if member.get_role() == "coach":
                     if not member.get_team():
                         menu_options.append("Crear equipo")
                     else:
-                        menu_options.append("Gestionar mi equipo")
+                        menu_options.extend([
+                            "Ver jugadores de mi equipo",
+                            "Ver estadísticas de jugador específico",
+                            "Gestionar mi equipo"
+                        ])
                 
                 menu_options.extend(["Ver mi perfil", "Cerrar sesión"])
                 
@@ -356,8 +356,8 @@ class MenuSystem:
             print(title_style("JUGADORES DEL EQUIPO"))
             print(separator())
             for player in players:
-                print(default_text(f"{player.get('name')} - {player.get('position')}"))
-                print(default_text(f"  Goles: {player.get('goals', 0)} | Asistencias: {player.get('assists', 0)}"))
+                print(default_text(f"{player.get('_name')} - {player.get('_position')}"))
+                print(default_text(f"  Goles: {player.get('_goals', 0)} | Asistencias: {player.get('_assists', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error: {e}"))
@@ -373,18 +373,16 @@ class MenuSystem:
         
         try:
             stats = self.player_service.get_player_stats(player_id)
-            
             print("\n" + separator())
-            print(title_style(f"ESTADÍSTICAS DE {stats.get('name', 'N/A')}"))
+            print(title_style(f"ESTADÍSTICAS DE {stats.get('_name', 'N/A')}"))
             print(separator())
-            print(default_text(f"Posición: {stats.get('position', 'N/A')}"))
-            print(default_text(f"Edad: {stats.get('age', 'N/A')}"))
-            print(default_text(f"Goles: {stats.get('goals', 0)}"))
-            print(default_text(f"Asistencias: {stats.get('assists', 0)}"))
-            print(default_text(f"Tiros: {stats.get('shots', 0)}"))
-            print(default_text(f"Tiros a puerta: {stats.get('shots_on_target', 0)}"))
-            print(default_text(f"Despejes: {stats.get('clearances', 0)}"))
-            print(default_text(f"Partidos jugados: {stats.get('matches_played', 0)}"))
+            print(default_text(f"Posición: {stats.get('_position', 'N/A')}"))
+            print(default_text(f"Edad: {stats.get('_age', 'N/A')}"))
+            print(default_text(f"Goles: {stats.get('_goals', 0)}"))
+            print(default_text(f"Asistencias: {stats.get('_assists', 0)}"))
+            print(default_text(f"Tiros: {stats.get('_shots', 0)}"))
+            print(default_text(f"Tiros a puerta: {stats.get('_shots_on_target', 0)}"))
+            print(default_text(f"Despejes: {stats.get('_clearances', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error: {e}"))
@@ -403,7 +401,7 @@ class MenuSystem:
         opcion = options("Agregar jugador", "Remover jugador", "Volver", center=True)
         
         try:
-            team_id = member.get_team().get_id() if hasattr(member.get_team(), 'get_id') else member.get_team()['id']
+            team_id = member.get_team().get_id()
             
             if opcion == "1":
                 player_id = input("ID del jugador a agregar: ".center(WIDTH)).strip()
@@ -500,18 +498,17 @@ class MenuSystem:
         
         try:
             stats = self.player_service.get_player_stats(player_id)
-            
+            print(stats)
             print("\n" + separator())
-            print(title_style(f"ESTADÍSTICAS DE {stats.get('name', 'N/A')}"))
+            print(title_style(f"ESTADÍSTICAS DE {stats.get('_name', 'N/A')}"))
             print(separator())
-            print(default_text(f"Edad: {stats.get('age', 'N/A')}"))
-            print(default_text(f"Posición: {stats.get('position', 'N/A')}"))
-            print(default_text(f"Goles: {stats.get('goals', 0)}"))
-            print(default_text(f"Asistencias: {stats.get('assists', 0)}"))
-            print(default_text(f"Tiros: {stats.get('shots', 0)}"))
-            print(default_text(f"Tiros a puerta: {stats.get('shots_on_target', 0)}"))
-            print(default_text(f"Despejes: {stats.get('clearances', 0)}"))
-            print(default_text(f"Partidos jugados: {stats.get('matches_played', 0)}"))
+            print(default_text(f"Edad: {stats.get('_age', 'N/A')}"))
+            print(default_text(f"Posición: {stats.get('_position', 'N/A')}"))
+            print(default_text(f"Goles: {stats.get('_goals', 0)}"))
+            print(default_text(f"Asistencias: {stats.get('_assists', 0)}"))
+            print(default_text(f"Tiros: {stats.get('_shots', 0)}"))
+            print(default_text(f"Tiros a puerta: {stats.get('_shots_on_target', 0)}"))
+            print(default_text(f"Despejes: {stats.get('_clearances', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error: {e}"))
@@ -521,22 +518,22 @@ class MenuSystem:
         team_id = input("ID del equipo: ".center(WIDTH)).strip()
         
         try:
-            team_info = self.team_service.get_team_info(team_id)
+            team_info: Team = self.team_service.get_team_info(team_id)
             if not team_info:
                 print(default_text("Equipo no encontrado"))
                 input(default_text("Presiona Enter para continuar..."))
                 return
             
             print("\n" + separator())
-            print(title_style(f"EQUIPO: {team_info.get('name', 'N/A')}"))
+            print(title_style(f"EQUIPO: {team_info.get_name()}"))
             print(separator())
             
             # Obtener jugadores del equipo
             players = self.player_service.get_all_players(team_id)
             print("\n" + default_text("Jugadores:"))
             for player in players:
-                print(default_text(f"- {player.get('name')} ({player.get('position')})"))
-                print(default_text(f"  Goles: {player.get('goals', 0)} | Asistencias: {player.get('assists', 0)}"))
+                print(default_text(f"- {player.get('_name')} ({player.get('_position')})"))
+                print(default_text(f"  Goles: {player.get('_goals', 0)} | Asistencias: {player.get('_assists', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error: {e}"))
@@ -545,13 +542,12 @@ class MenuSystem:
     def view_all_players(self):
         try:
             players = self.player_service.get_all_players()
-            
             print("\n" + separator())
             print(title_style("TODOS LOS JUGADORES"))
             print(separator())
             for player in players:
-                print(default_text(f"{player.get('name')} - {player.get('position')}"))
-                print(default_text(f"  G: {player.get('goals', 0)} | A: {player.get('assists', 0)} | P: {player.get('matches_played', 0)}"))
+                print(default_text(f"{player.get('_name')} - {player.get('_position')}"))
+                print(default_text(f"  G: {player.get('_goals', 0)} | A: {player.get('_assists', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error: {e}"))
@@ -565,19 +561,19 @@ class MenuSystem:
         print(default_text("Filtros opcionales (Enter para omitir):"))
         position = input("Posición: ".center(WIDTH)).strip().upper() or None
         
-        filters = {}
-        if position:
-            filters['position'] = position
         
         try:
+            filters = {}
+            if position:
+                filters['_position'] = Position(position)
             players = self.player_service.search_players(filters)
             
             print("\n" + separator())
             print(title_style("RESULTADOS"))
             print(separator())
             for player in players:
-                print(default_text(f"{player.get('name')} - {player.get('position')}"))
-                print(default_text(f"  G: {player.get('goals', 0)} | A: {player.get('assists', 0)}"))
+                print(default_text(f"{player.get('_name')} - {player.get('_position')}"))
+                print(default_text(f"  G: {player.get('_goals', 0)} | A: {player.get('_assists', 0)}"))
             print(separator())
         except Exception as e:
             print(default_text(f"Error: {e}"))
@@ -591,7 +587,6 @@ class MenuSystem:
         print(default_text(f"Nombre: {referee.get_name()}"))
         print(default_text(f"Edad: {referee.get_age()}"))
         print(default_text(f"Licencia: {referee.get_license()}"))
-        print(default_text(f"Partidos oficiados: {referee.get_matches_officiated()}"))
         print(separator())
         input(default_text("Presiona Enter para continuar..."))
 

@@ -7,8 +7,8 @@ class TeamService:
 
     def __init__(self):
         self.auth_service: AuthService = AuthService.get_instance()
-        self.teams_repo = RepositoryProvider.get("teams")
-        self.players_repo = RepositoryProvider.get("User")
+        self.teams_repo = RepositoryProvider.get("Team")
+        self.players_repo = RepositoryProvider.get("Player")
 
     def create_team(self, team_id, name=None):
         current_user = self.auth_service.get_current_user()
@@ -50,7 +50,7 @@ class TeamService:
         player = self.players_repo.find(player_id)
         if not isinstance(player, Player):
             return False
-        if player.get_team() and player.get_team()["id"] == team_id:
+        if player.get_team() and player.get_team().get_id() == team_id:
             player.set_team(None)
             self.players_repo.replace(player.get_id(), player)
             return True

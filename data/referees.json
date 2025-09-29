@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "_id": "ss",
+    "_name": "asd",
+    "_age": 19,
+    "_password": "sd",
+    "_license": "ASDD-1"
+  }
+]

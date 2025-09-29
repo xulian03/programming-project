@@ -226,6 +226,21 @@ class ClubMember(User):
         role (str): Nuevo rol
         """
         self._role = role
+    
+    def serialize(self):
+        """
+        Serializa el miembro de club a diccionario.
+        
+        Convierte el objeto Team a ID para
+        permitir almacenamiento en JSON.
+        
+        Returns:
+        dict: Diccionario serializable del jugador
+        """
+        data = super().serialize()
+        # Convierte objeto Team a ID
+        data["_team"] = self._team.get_id() if isinstance(self._team, Team) else self._team
+        return data
 
 
 # -------------------------------
