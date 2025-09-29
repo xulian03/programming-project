@@ -30,4 +30,6 @@ class RepositoryProvider():
 
     @classmethod
     def get(cls, name) -> Repository:
+        if not name in cls._repositories.keys():
+            return None
         return cls._repositories[name]
