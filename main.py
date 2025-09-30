@@ -304,36 +304,30 @@ class MenuSystem:
             print(separator())
             
             try:
-                menu_options = [
-                    "Ver jugadores de mi equipo",
-                    "Ver estadísticas de jugador específico"
-                ]
-                menu_options = []
-                if member.get_role() == "coach":
-                    if not member.get_team():
+                menu_options = ["Ver mi perfil"]
+                if not member.get_team():
+                    if member.get_role() == "coach":
                         menu_options.append("Crear equipo")
-                    else:
-                        menu_options.extend([
-                            "Ver jugadores de mi equipo",
-                            "Ver estadísticas de jugador específico",
-                            "Gestionar mi equipo"
-                        ])
+                else:
+                    menu_options.extend([
+                        "Ver jugadores de mi equipo",
+                        "Gestionar mi equipo"
+                    ])
                 
-                menu_options.extend(["Ver mi perfil", "Cerrar sesión"])
+                menu_options.extend(["Ver estadísticas de jugador específico", "Cerrar sesión"])
                 
                 opcion = options(*menu_options, center=True)
                 
                 if opcion == "1":
-                    self.view_team_players(member)
-                elif opcion == "2":
-                    self.view_specific_player_stats(member)
-                elif opcion == "3" and member.get_role() == "coach":
-                    if not member.get_team():
-                        self.create_team(member)
-                    else:
-                        self.manage_team(member)
-                elif opcion == str(len(menu_options) - 1):
                     self.view_club_member_profile(member)
+                elif member.get_role() == "coach" and not member.get_team() and opcion == "2":
+                    self.create_team(member)
+                elif member.get_team() and opcion == "2":
+                    self.view_team_players(member)
+                elif member.get_team() and opcion == "3":
+                    self.manage_team(member)
+                elif opcion == str(len(menu_options) - 1):
+                    self.view_specific_player_stats()
                 elif opcion == str(len(menu_options)):
                     self.auth_service.logout()
                     print(default_text("Sesión cerrada"))
@@ -349,11 +343,14 @@ class MenuSystem:
             print(default_text("No tienes equipo asignado"))
             input(default_text("Presiona Enter para continuar..."))
             return
-        
         try:
             players = self.player_service.get_all_players()
+            if len(players):
+                print(default_text("El equipo no tiene jugadores."))
+                input(default_text("Presiona Enter para continuar..."))
+                return
             print("\n" + separator())
-            print(title_style("JUGADORES DEL EQUIPO"))
+            print(title_style(f"JUGADORES DEL {member.get_team().get_name().capitalize()}"))
             print(separator())
             for player in players:
                 print(default_text(f"{player.get('_name')} - {player.get('_position')}"))
@@ -363,12 +360,8 @@ class MenuSystem:
             print(default_text(f"Error: {e}"))
         input(default_text("Presiona Enter para continuar..."))
 
-    def view_specific_player_stats(self, member: ClubMember):
-        if not member.get_team():
-            print(default_text("No tienes equipo asignado"))
-            input(default_text("Presiona Enter para continuar..."))
-            return
-        
+    def view_specific_player_stats(self):
+    
         player_id = input("ID del jugador: ".center(WIDTH)).strip()
         
         try:

@@ -4,7 +4,7 @@
     "_name": "Messi",
     "_age": 36,
     "_password": "10",
-    "_team": "Barcelona",
+    "_team": null,
     "_position": "DC",
     "_goals": 0,
     "_assists": 0,

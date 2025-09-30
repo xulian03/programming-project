@@ -6,5 +6,13 @@
     "_password": "1",
     "_team": "Barcelona",
     "_role": "coach"
+  },
+  {
+    "_id": "123",
+    "_name": "Holaas asd",
+    "_age": 19,
+    "_password": "1",
+    "_team": null,
+    "_role": "staff"
   }
 ]
